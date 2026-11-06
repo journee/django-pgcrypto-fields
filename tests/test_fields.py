@@ -1546,3 +1546,48 @@ class TestEncryptedTextFieldModel(TestCase):
             instance.hmac_field,
             expected
         )
+
+
+class TestPlaceholderSql(TestCase):
+    """Check PGP values are encrypted when saved.
+
+    Regression test for Django 6.1, which saves values using
+    `Field.get_placeholder_sql`. Without it, values were stored as plaintext
+    and reading them back failed with "Wrong key or corrupt data".
+    """
+    model = EncryptedModel
+
+    def get_stored_pgp_sym_field(self, instance):
+        """Return the raw bytes stored in the database, without decrypting."""
+        with connections['default'].cursor() as cursor:
+            cursor.execute(
+                'SELECT pgp_sym_field FROM {} WHERE id = %s'.format(
+                    self.model._meta.db_table
+                ),
+                [instance.pk],
+            )
+            return bytes(cursor.fetchone()[0])
+
+    def assert_pgp_sym_field_encrypted(self, instance, expected):
+        """Assert the value is encrypted in the database and decrypts back."""
+        self.assertNotIn(expected.encode(), self.get_stored_pgp_sym_field(instance))
+        self.assertEqual(
+            self.model.objects.get(pk=instance.pk).pgp_sym_field,
+            expected,
+        )
+
+    def test_create_encrypts_pgp_sym_field(self):
+        """Assert a value saved on insert is encrypted and round-trips."""
+        expected = 'Secret saved on insert'
+        instance = self.model.objects.create(pgp_sym_field=expected)
+
+        self.assert_pgp_sym_field_encrypted(instance, expected)
+
+    def test_update_encrypts_pgp_sym_field(self):
+        """Assert a value saved on update is encrypted and round-trips."""
+        instance = self.model.objects.create(pgp_sym_field='Original value')
+        expected = 'Secret saved on update'
+        instance.pgp_sym_field = expected
+        instance.save()
+
+        self.assert_pgp_sym_field_encrypted(instance, expected)

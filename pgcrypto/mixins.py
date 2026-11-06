@@ -69,6 +69,14 @@ class HashMixin:
 
         return self.get_encrypt_sql(connection)
 
+    def get_placeholder_sql(self, value, compiler, connection):
+        """Return the placeholder SQL and its params, the API Django 6.1+ calls."""
+        placeholder = self.get_placeholder(value, compiler, connection)
+        if hasattr(value, 'as_sql'):
+            sql, params = compiler.compile(value)
+            return placeholder % sql, params
+        return placeholder, (value,)
+
     def get_encrypt_sql(self, connection):
         """Get encrypt sql. This may be overidden by some implementations."""
         return self.encrypt_sql
@@ -94,6 +102,14 @@ class PGPMixin:
     def get_placeholder(self, value, compiler, connection):
         """Tell postgres to encrypt this field using PGP."""
         raise NotImplementedError('The `get_placeholder` needs to be implemented.')
+
+    def get_placeholder_sql(self, value, compiler, connection):
+        """Return the placeholder SQL and its params, the API Django 6.1+ calls."""
+        placeholder = self.get_placeholder(value, compiler, connection)
+        if hasattr(value, 'as_sql'):
+            sql, params = compiler.compile(value)
+            return placeholder % sql, params
+        return placeholder, (value,)
 
     def get_cast_sql(self):
         """Get cast sql. This may be overidden by some implementations."""
