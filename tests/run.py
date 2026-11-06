@@ -10,6 +10,10 @@ from django.conf import settings
 from django.test.runner import DiscoverRunner
 
 BASEDIR = os.path.dirname(os.path.dirname(__file__))
+
+# Put the repo root first so `tests` is this project's package, not the
+# `tests` package that incuna-test-utils installs.
+sys.path.insert(0, os.path.abspath(BASEDIR))
 PUBLIC_PGP_KEY_PATH = os.path.abspath(
     os.path.join(BASEDIR, 'tests/keys/public.key')
 )
