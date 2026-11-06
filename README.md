@@ -1,29 +1,39 @@
 # django-pgcrypto-fields
 
-[![Latest Release](https://img.shields.io/pypi/v/django-pgcrypto-fields.svg)](https://pypi.org/pypi/django-pgcrypto-fields/) [![Python Versions](https://img.shields.io/pypi/pyversions/django-pgcrypto-fields.svg)](https://pypi.org/pypi/django-pgcrypto-fields/) [![Build Status](https://travis-ci.org/incuna/django-pgcrypto-fields.svg?branch=master)](https://travis-ci.org/incuna/django-pgcrypto-fields?branch=master) [![Requirements Status](https://requires.io/github/incuna/django-pgcrypto-fields/requirements.svg?branch=master)](https://requires.io/github/incuna/django-pgcrypto-fields/requirements/?branch=master) [![Updates](https://pyup.io/repos/github/incuna/django-pgcrypto-fields/shield.svg)](https://pyup.io/repos/github/incuna/django-pgcrypto-fields/) [![Coverage Status](https://coveralls.io/repos/github/incuna/django-pgcrypto-fields/badge.svg?branch=master)](https://coveralls.io/github/incuna/django-pgcrypto-fields?branch=master)
-
 `django-pgcrypto-fields` is a `Django` extension which relies upon `pgcrypto` to
 encrypt and decrypt data for fields.
 
+This is Journee's fork of
+[incuna/django-pgcrypto-fields](https://github.com/incuna/django-pgcrypto-fields).
+It adds:
+
+ - support for Django 6.1
+ - settings to choose the options used for symmetric key encryption (see
+   [Symmetric encryption options](#symmetric-encryption-options))
+
 ## Requirements
 
- - postgres with `pgcrypto`
- - Supports Django 2.2.x, 3.0.x, 3.1.x and 3.2.x
- - Compatible with Python 3 only
- 
- Last version of this library that supports `Django` 1.8.x, 1.9.x, 1.10.x
- was `django-pgcrypto-fields` 2.2.0.
- 
- Last version of this library that supports `Django` 2.0.x and 2.1.x was
- was `django-pgcrypto-fields` 2.5.2.
- 
+ - PostgreSQL with the `pgcrypto` extension: 14+ for Django 5.2 and 6.0, 15+ for
+   Django 6.1
+ - Django 5.2.x, 6.0.x or 6.1.x
+ - Python 3.12+
+ - psycopg 3, or psycopg2 2.9.9+
 
 ## Installation
 
-### Install package 
+### Install package
+
+This fork isn't published to PyPI (`pip install django-pgcrypto-fields` installs
+the upstream package), so install it from GitHub, pinned to a commit:
 
 ```bash
-pip install django-pgcrypto-fields
+pip install "django-pgcrypto-fields @ git+https://github.com/journee/django-pgcrypto-fields@<commit-sha>"
+```
+
+Or with uv:
+
+```bash
+uv add "git+https://github.com/journee/django-pgcrypto-fields" --rev <commit-sha>
 ```
 
 ### Django settings
@@ -62,7 +72,7 @@ INSTALLED_APPS = (
 DATABASES = {
     # This db will use the default keys above
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'pgcryto_fields',
         'USER': 'pgcryto_fields',
         'PASSWORD': 'xxxx',
@@ -73,7 +83,7 @@ DATABASES = {
         }
     },
     'diff_keys': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'pgcryto_fields_diff',
         'USER': 'pgcryto_fields_diff',
         'PASSWORD': 'xxxx',
@@ -89,11 +99,42 @@ DATABASES = {
 }
 ```
 
+### Symmetric encryption options
+
+These optional settings choose the options passed to pgcrypto's `pgp_sym_encrypt`.
+See the [pgcrypto documentation](https://www.postgresql.org/docs/current/pgcrypto.html)
+for what each option does.
+
+| Setting                         | pgcrypto option | Values                                              |
+|---------------------------------|-----------------|-----------------------------------------------------|
+| `PGP_SYM_ENCRYPT_CIPHER_ALGO`   | `cipher-algo`   | `bf`, `aes128`, `aes192`, `aes256`, `3des`, `cast5` |
+| `PGP_SYM_ENCRYPT_S2K_MODE`      | `s2k-mode`      | `0` (no salt, unsafe), `1`, `3`                     |
+| `PGP_SYM_ENCRYPT_COMPRESS_ALGO` | `compress-algo` | `0` (none), `1` (ZIP), `2` (ZLIB)                   |
+
+In `settings.py`:
+```python
+PGP_SYM_ENCRYPT_CIPHER_ALGO = 'aes256'
+PGP_SYM_ENCRYPT_S2K_MODE = '3'
+PGP_SYM_ENCRYPT_COMPRESS_ALGO = '0'
+```
+
+ - Give the values as strings. Unset settings and falsy values, such as the
+   integer `0`, aren't passed, so pgcrypto's default is used.
+ - Only `CharPGPSymmetricKeyField`, `EmailPGPSymmetricKeyField`,
+   `TextPGPSymmetricKeyField` and `DecimalPGPSymmetricKeyField` use these options.
+   The other symmetric key fields always use pgcrypto's defaults.
+ - The options apply to every database. Unlike `PGCRYPTO_KEY`, they can't be set
+   per database.
+ - They're read once, when `pgcrypto` is first imported, so changing them later
+   (for example with `override_settings`) has no effect.
+ - They only affect newly saved values. Values saved with other options still
+   decrypt, because the options are stored with the encrypted data.
+
 ### Generate GPG keys if using Public Key Encryption
 
 The public key is going to encrypt the message and the private key will be
 needed to decrypt the content. The following commands have been taken from the
-[pgcrypto documentation](http://www.postgresql.org/docs/devel/static/pgcrypto.html)
+[pgcrypto documentation](https://www.postgresql.org/docs/current/pgcrypto.html)
 (see Generating PGP Keys with GnuPG).
 
 Generating a public and a private key (The preferred key type is "DSA and Elgamal".):
@@ -183,7 +224,7 @@ Supported PGP symmetric key fields are:
  - `DateTimePGPSymmetricKeyField`
  - `TimePGPSymmetricKeyField`
  - `IntegerPGPSymmetricKeyField`
- - `BigIntegerPGPSymerticKeyField`
+ - `BigIntegerPGPSymmetricKeyField`
  - `DecimalPGPSymmetricKeyField`
  - `FloatPGPSymmetricKeyField`
  - `BooleanPGPSymmetricKeyField`
@@ -358,10 +399,7 @@ class Product(models.Model):
 
 ### `.distinct('encrypted_field_name')`
 
-Due to a missing feature in the Django ORM, using `distinct()` on an encrypted field
-does not work for Django 2.0.x and lower.
-
-The normal distinct works on Django 2.1.x and higher:
+`distinct()` works on encrypted fields:
 
 ```python
 items = EncryptedFKModel.objects.filter(
@@ -372,25 +410,6 @@ items = EncryptedFKModel.objects.filter(
     'pgp_sym_field'
 )
 ```
-
-Workaround for Django 2.0.x and lower:
-
-```python
-from django.db import models
-
-items = EncryptedFKModel.objects.filter(
-    pgp_sym_field__startswith='P'
-).annotate(
-    _distinct=models.F('pgp_sym_field')
-).only(
-    'id', 'pgp_sym_field', 'fk_model__fk_pgp_sym_field'
-).distinct(
-    '_distinct'
-)
-```
-
-This works because the annotated field is auto-decrypted by Django as a `F` field and that 
-field is used in the `distinct()`.
 
 ### Migrating existing fields into PGCrypto Fields
 
@@ -450,7 +469,7 @@ This commonly means you do not have the `pgcrypto` extension installed in Postgr
 
 Taken direction from the PostgreSQL documentation:
 
-https://www.postgresql.org/docs/9.6/static/pgcrypto.html#AEN187024
+https://www.postgresql.org/docs/current/pgcrypto.html
 
 All pgcrypto functions run inside the database server. That means that all the 
 data and passwords move between pgcrypto and client applications in clear text. Thus you must:

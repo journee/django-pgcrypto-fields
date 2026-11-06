@@ -3,6 +3,14 @@
 ## Master (unreleased)
 
 * Added support for BooleanFields (#325)
+* Added `PGP_SYM_ENCRYPT_CIPHER_ALGO`, `PGP_SYM_ENCRYPT_S2K_MODE` and
+  `PGP_SYM_ENCRYPT_COMPRESS_ALGO` settings for `pgp_sym_encrypt` options
+* Added support for Django 5.2, 6.0 and 6.1
+* Dropped support for Django below 5.2 and Python below 3.12
+* Updated requirements_dev.txt and removed requirements.txt
+* Updated Travis config to test Django 5.2, 6.0 and 6.1 on Python 3.12 to 3.15
+* Stopped installing the test app's subpackages with the package
+* Included CHANGELOG.md in the source distribution
 
 ## 2.6.0
 

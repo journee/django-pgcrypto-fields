@@ -56,16 +56,17 @@ Ready to contribute? Here's how to set up `django-pgcrypto-fields` for local dev
 2. Clone your fork locally:
 
     ```bash
-    $ git clone git@github.com:your_name_here/pgcrypto.git
+    $ git clone git@github.com:your_name_here/django-pgcrypto-fields.git
     ```
     
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you 
-set up your fork for local development:
+3. Install your local copy into a virtualenv. This also installs the package
+   itself and Django:
 
     ```bash
-    $ mkvirtualenv django-pgcrypto-fields
     $ cd django-pgcrypto-fields/
-    $ pip install -r requirements_dev.txt --upgrade
+    $ python -m venv .venv
+    $ source .venv/bin/activate
+    $ pip install -r requirements_dev.txt
     ```
 
 4. Create a branch for local development:
@@ -83,10 +84,9 @@ set up your fork for local development:
     $ make test
     ```
 
-   To get flake8 and tox, just pip install them into your virtualenv.
-   
-   You will need a postgres database called `pgcrypto_fields` and `pgcrypto_fields_diff` on localhost without 
-   password authentication
+   You will need PostgreSQL (14+, or 15+ for Django 6.1) running on localhost,
+   with a user that can connect without a password and create databases. The
+   tests create their own databases.
 
 6. Commit your changes and push your branch to GitHub:
 
@@ -105,10 +105,9 @@ Before you submit a pull request, check that it meets these guidelines:
 1. The pull request should include tests.
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
-   feature to the list in README.rst.
-3. The pull request should work for Python 3.6, 3.7 and 3.8. Check
-   https://travis-ci.org/incuna/django-pgcrypto-fields/pull_requests
-   and make sure that the tests pass for all supported Python versions.
+   feature to the list in README.md.
+3. The pull request should work for Python 3.12 to 3.15 and Django 5.2, 6.0
+   and 6.1, the versions tested in `.travis.yml`.
 
 ### Deploying
 
